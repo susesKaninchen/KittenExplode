@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Button-Beispiel</title>
+	<style>
+		.btn-container {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+	.btn {
+		padding: 10px;
+		margin: 10px;
+		background-color: #f1f1f1;
+		border: none;
+		border-radius: 5px;
+		cursor: pointer;
+	}
+	
+	.btn:hover {
+		background-color: #ddd;
+	}
+</style>
+</head>
+<body>
+	<div class="btn-container">
+	<form>
+		<label for="zahl">Seed eingeben:</label>
+		<input type="number" id="zahl" name="zahl">
+		<button type="submit" name="initiieren">Initiieren</button>
+	</form>
+		<!--<button class="btn" onclick="location.href='ziel-seite.html'">Start</button>-->
+		<!--<button class="btn" onclick="location.href='anleitung.html'">Anleitung</button>-->
+	</div>
+	<script>
+		var randomZahl = Math.floor(Math.random() * 255);
+		document.getElementById("zahl").value = randomZahl;
+	</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Exploding Kitten</title>
+	<style>
+	* {
+	box-sizing: border-box;
+}
+
+
+
+body {
+	align-items: center;
+	justify-content: center;
+	background: #697854;
+	font-family: "Josefin Slab", serif;
+}
+
+.content-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%%;
+	height: auto;
+	filter: drop-shadow(5px 5px 25px black);
+}
+
+.content {
+	position: relative;
+	top: 10px;
+	background: url("/img/0kjMcUe.jpg");
+	background-size: 1000px;
+	background-position: center right;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	width: 100%%;
+	height: auto;
+	padding: 30px 80px 50px 80px;
+	z-index: 1;
+	filter: brightness(0.95) sepia(30%%) saturate(80%%);
+	border-radius: 30px;
+	overflow: auto;
+}
+
+@media screen and (max-width: 1650px) {
+	.content {
+		width: 90%%;
+	}
+}
+
+@media screen and (max-width: 1500px) {
+	.content {
+		width: 90%%;
+	}
+}
+
+@media screen and (max-width: 868px) {
+	.content {
+		padding: 30px 60px 50px 60px;
+		width: 90%%;
+	}
+}
+
+@media screen and (max-width: 560px) {
+	.content {
+		padding: 30px 30px 50px 30px;
+		width: 90%%;
+	}
+}
+
+h1 {
+	font-family: "Yellowtail", cursive;
+	font-size: 80pt;
+	margin: 0;
+	font-weight: 1;
+	color: #26231e;
+	mix-blend-mode: color-burn;
+}
+
+@media screen and (max-width: 1071px) {
+	h1 {
+		font-size: 60pt;
+	}
+}
+
+@media screen and (max-width: 756px) {
+	h1 {
+		font-size: 46pt;
+		line-height: 46pt;
+		padding: 20px 0px;
+	}
+}
+
+@media screen and (max-width: 370px) {
+	h1 {
+		font-size: 40pt;
+	}
+}
+
+hr {
+	width: 80%%;
+	opacity: 0.7;
+	margin-top: 20px;
+	margin-bottom: -60px;
+	border-radius: 50px;
+	padding: 40px;
+}
+
+h2 {
+	font-size: 30pt;
+	font-weight: 300;
+	color: #35312b;
+	text-shadow: 0.3px 0.3px 2px Sienna;
+}
+
+h3 {
+	text-decoration: 1px dashed underline #888;
+	letter-spacing: 2px;
+	font-size: 20pt;
+	font-weight: 300;
+	font-style: italic;
+	color: #35312b;
+	margin-bottom: 40px;
+	text-shadow: 0.6px 0.6px 1px Sienna;
+}
+
+@media screen and (max-width: 700px) {
+	h3 {
+		margin-bottom: 70px;
+	}
+}
+
+p {
+	font-size: 16pt;
+	font-weight: 400;
+	line-height: 28pt;
+	color: #565046;
+	letter-spacing: 0.5px;
+	word-spacing: 3px;
+	text-shadow: 0.2px 0.2px 1.3px Sienna;
+}
+
+p:first-of-type {
+	align-self: flex-start;
+	font-weight: 600;
+	position: relative;
+}
+
+p span {
+	font-family: "Sassy Frass", cursive;
+	font-size: 600%%;
+	font-weight: 1;
+	opacity: 0.8;
+}
+
+@media screen and (max-width: 600px) {
+	p {
+		font-size: 14pt;
+	}
+}
+
+	</style>
+</head>
+<body>
+<div class="content-container">
+	<div class="content">
+	<h1>Exploding Kitten</h1>
+	<p>Willkommen zur Anleitung von Exploding Kitten. In diesem Spiel geht es darum, eine explodierende Bombe zu entschärfen. Diese Anleitung soll Ihnen helfen, das Spiel erfolgreich zu meistern.</p>
+<h2>Seite 1: Haupt Seite</h2>
+<p>Regeln:</p>
+<ul>
+	<li>Wenn du 3 Fehler machst, hast du Verloren</li>
+	<li>Wenn die Zeit um ist, hast du Verloren</li>
+	<li>Wenn du alle Seiten gelöst hast, hast du gewonnen</li>
+	<li>Die Karten auf dem Spielbrett auslegen</li>
+</ul>
+<p>Anzeige:</p>
+<ul>
+	<li>Die Anzahl der Fehler wird an den 3 roten LEDs angezeigt</li>
+	<li>Die verbleibende Zeit wird auf dem Display angezeigt</li>
+</ul>
+<p>Viel Glück.</p>
+%ANLEITUNG_1%
+%ANLEITUNG_2%
+%ANLEITUNG_3%
+%ANLEITUNG_4%
+%ANLEITUNG_5%
+%ANLEITUNG_6%
+%ANLEITUNG_7%
+%ANLEITUNG_8%
+
+
+	</div>
+</div>
+</body>
+</html>
