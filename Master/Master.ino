@@ -134,14 +134,17 @@ void loop() {
       lastWrite = millis();
     }
     if (gameStati >= 200) {
+      setPixel(0);
       setEndSlaves(END_WIN);
       Serial.println("Gewonnen");
       gameRunning = false;
     }else if (gameStati%25 >= 3) {
+      setPixel(3);
       setEndSlaves(END_LOST);
       Serial.println("Verloren zu viele Fehler");
       gameRunning = false;
     } else if (millis() > startPoint + timeGame * 1000) {
+      setPixel(3);
       setEndSlaves(END_LOST);
       Serial.println("Verloren Zeit ist um");
       gameRunning = false;
