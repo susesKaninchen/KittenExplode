@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #include "introducion.h"// Die Anleitung für deine Seite
 #include <Wire.h>       // Die Libary für die Verbindung
 #define LED_BUILTIN 2   // Onbord LED, fals du sie benutzen möchtest
