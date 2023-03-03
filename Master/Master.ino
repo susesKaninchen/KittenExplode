@@ -11,6 +11,17 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+#include <TM1637.h>
+// Instantiation and pins configurations
+// Pin 19 - > DIO
+// Pin 18 - > CLK
+TM1637 tm(18, 19);
+
+#include <Adafruit_NeoPixel.h>
+#define LED_PIN        6
+#define NUMPIXELS 3
+Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
 AsyncWebServer server(80);
 
 const char* ssid = "Kitten";
@@ -46,6 +57,17 @@ String processor(const String& var)
 
 int seedGobal = 0;
 
+void setPixel(byte error) {
+  for (int g = 0 ; g<3; g++) {
+    if (error >= g+1){
+      pixels.setPixelColor(g, pixels.Color(150, 0, 0));
+    } else {
+    pixels.setPixelColor(g, pixels.Color(0, 150, 0));
+  }
+  }
+  pixels.show();
+}
+
 void setup() {
   Serial.begin(115200);
   while (!Serial);
@@ -66,10 +88,16 @@ void setup() {
     
     server.onNotFound(notFound);
     server.begin();
+    tm.begin();
+    tm.setBrightness(4);
+    tm.display(1111)->blink(1000);
+    pixels.begin();
+    pixels.clear();
   Serial.println("Master getartet");
 }
 
 void loop() {
+  tm.display("START")->scrollLeft(500);
   Serial.println("Starte Spiel");
   Serial.print("Initiire Slaves mit Seed:");
   Serial.println(8);
@@ -85,9 +113,18 @@ void loop() {
   byte gameStati = 0;
   unsigned long startPoint = millis();
   unsigned long lastWrite = millis();
+  int minUten = 0;
+  int sekunden = 0;
+  unsigned long ts = 0;
   while (gameRunning) {
+    tm.clearScreen();
+    ts = (int)(startPoint + timeGame * 1000 - millis())/1000;
+    sekunden = (ts)%60;
+    minUten = ts/60;
+    tm.display((float) minUten + (sekunden/100));
     gameStati = getStatusSlaves();
     if (millis() > lastWrite + 2000) {
+      setPixel(gameStati%25);
       Serial.print("Status\nFehler: ");
       Serial.println(gameStati%25);
       Serial.print("Seiten Geschafft: ");
