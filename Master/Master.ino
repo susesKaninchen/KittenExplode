@@ -55,8 +55,8 @@ void setup() {
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   SPIFFS.begin();
     server.on("/init", HTTP_POST, [](AsyncWebServerRequest *request){
-      if(request->hasParam("download")){
-        AsyncWebParameter* p = request->getParam("download");
+      if(request->hasParam("zahl")){
+        AsyncWebParameter* p = request->getParam("zahl");
         seedGobal = atoi(p->value().c_str());
       }
         request->redirect("/anleitung.html");
