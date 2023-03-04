@@ -52,7 +52,8 @@ void receiveEvent(int howMany) {
 }
 
 boolean initMasterConnection() {
-  Wire.begin(8);                // join i2c bus with address #8
+  uint8_t adr = 8;
+  Wire.begin(adr);                // join i2c bus with address #8
   Wire.onReceive(receiveEvent); // function that executes whenever data is received from writer
   return true;
 }
