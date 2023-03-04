@@ -75,6 +75,7 @@ void setup() {
   IPAddress apIP(192,1,1,1);
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+
   SPIFFS.begin();
     server.on("/init", HTTP_POST, [](AsyncWebServerRequest *request){
       if(request->hasParam("zahl")){
