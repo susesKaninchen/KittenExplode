@@ -20,7 +20,7 @@
 TM1637 tm(18, 19);
 
 #include <Adafruit_NeoPixel.h>
-#define LED_PIN        3
+#define LED_PIN        26
 #define NUMPIXELS 6
 Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -58,6 +58,14 @@ String processor(const String& var)
 }
 
 int seedGobal = 0;
+unsigned long timeGame = -1;
+bool gameRunning = false;
+byte gameStati = 0;
+unsigned long startPoint = millis();
+unsigned long lastWrite = millis();
+int minUten = 0;
+int sekunden = 0;
+unsigned long ts = 0;
 
 void setPixel(byte error) {
   for (int g = 0 ; g<3; g++) {
@@ -86,6 +94,15 @@ void setup() {
     if(request->hasParam("zahl")){
       AsyncWebParameter* p = request->getParam("zahl");
       seedGobal = atoi(p->value().c_str());
+      timeGame = initSlaves(seedGobal);
+      setEndSlaves(END_RUNNING);
+      gameRunning = true;
+      gameStati = 0;
+      startPoint = millis();
+      lastWrite = millis();
+      minUten = 0;
+      sekunden = 0;
+      ts = 0;
     }
       request->redirect("/anleitung.html");
   });
@@ -104,30 +121,10 @@ void setup() {
 }
 
 void loop() {
-  tm.display("START")->scrollLeft(500);
-  Serial.println("Starte Spiel");
-  Serial.print("Initiire Slaves mit Seed:");
-  Serial.println(8);
-  unsigned long timeGame = initSlaves(8);
-  Serial.print("Das Spiel dauert: ");
-  Serial.print(timeGame);
-  Serial.println(" Sekunden");
-  Serial.print("Status: ");
-  Serial.println(getStatusSlaves());
-  Serial.println("Starte Slaves");
-  setEndSlaves(END_RUNNING);
-  bool gameRunning = true;
-  byte gameStati = 0;
-  unsigned long startPoint = millis();
-  unsigned long lastWrite = millis();
-  int minUten = 0;
-  int sekunden = 0;
-  unsigned long ts = 0;
+  tm.display("IDLE")->scrollLeft(500);
   while (gameRunning) {
     //tell the wdt we are still alive
     rtc_wdt_feed();
-
-
     tm.clearScreen();
     ts = (int)(startPoint + timeGame * 1000 - millis())/1000;
     sekunden = (ts)%60;
