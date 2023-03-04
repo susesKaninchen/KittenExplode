@@ -1,3 +1,5 @@
+#include "soc/rtc_wdt.h"
+
 #include <Arduino.h>
 #include "introducion.h"
 #include <Wire.h>
@@ -18,8 +20,8 @@
 TM1637 tm(18, 19);
 
 #include <Adafruit_NeoPixel.h>
-#define LED_PIN        6
-#define NUMPIXELS 3
+#define LED_PIN        3
+#define NUMPIXELS 6
 Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 AsyncWebServer server(80);
@@ -71,29 +73,33 @@ void setPixel(byte error) {
 void setup() {
   Serial.begin(115200);
   while (!Serial);
+  
   Wire.begin(); // join i2c bus (address optional for writer)
+
   IPAddress apIP(192,1,1,1);
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
 
   SPIFFS.begin();
-    server.on("/init", HTTP_POST, [](AsyncWebServerRequest *request){
-      if(request->hasParam("zahl")){
-        AsyncWebParameter* p = request->getParam("zahl");
-        seedGobal = atoi(p->value().c_str());
-      }
-        request->redirect("/anleitung.html");
-    });
-    server.serveStatic("/img/", SPIFFS, "/img/");
-    server.serveStatic("/", SPIFFS, "/").setTemplateProcessor(processor);
-    
-    server.onNotFound(notFound);
-    server.begin();
-    tm.begin();
-    tm.setBrightness(4);
-    tm.display(1111)->blink(1000);
-    pixels.begin();
-    pixels.clear();
+  
+  server.on("/init", HTTP_POST, [](AsyncWebServerRequest *request){
+    if(request->hasParam("zahl")){
+      AsyncWebParameter* p = request->getParam("zahl");
+      seedGobal = atoi(p->value().c_str());
+    }
+      request->redirect("/anleitung.html");
+  });
+  server.serveStatic("/img/", SPIFFS, "/img/");
+  server.serveStatic("/", SPIFFS, "/").setTemplateProcessor(processor);
+  
+  server.onNotFound(notFound);
+  server.begin();
+  
+  tm.begin();
+  tm.setBrightness(4);
+  tm.display(1111)->blink(1000);
+  pixels.begin();
+  pixels.clear();
   Serial.println("Master getartet");
 }
 
@@ -118,6 +124,10 @@ void loop() {
   int sekunden = 0;
   unsigned long ts = 0;
   while (gameRunning) {
+    //tell the wdt we are still alive
+    rtc_wdt_feed();
+
+
     tm.clearScreen();
     ts = (int)(startPoint + timeGame * 1000 - millis())/1000;
     sekunden = (ts)%60;
