@@ -55,9 +55,6 @@ void setup() {
 	
   delay(5000);
   Serial.println();
-  Serial.println(F("--------------------------------"));
-  Serial.println(F("SparkFun APDS-9960 - GestureTest"));
-  Serial.println(F("--------------------------------"));
 
 	pinMode(PIN_BUZZER, OUTPUT);
 	pinMode(PIN_MOT_EN, OUTPUT);
