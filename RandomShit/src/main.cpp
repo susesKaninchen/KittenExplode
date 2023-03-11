@@ -20,39 +20,26 @@ Adafruit_AlphaNum4 alpha4 = Adafruit_AlphaNum4();
 INA219_WE ina219 = INA219_WE(&Wire1,0x40);
 
 #define NUM_LEDS 64
+#define BRIGHTNESS 60
+
 CRGBW leds[NUM_LEDS];
 CRGB *ledsRGB = (CRGB *) &leds[0];
 CRGB ledRing[10];
 
-const uint8_t brightness = 60;
 int isr_flag = 0;
 char displaybuffer[4] = {' ', ' ', ' ', ' '};
 
 int buttonStateL = 0;
 int buttonStateR = 0;
 
-unsigned long timerRainbow, timerFillHex, timerFillMatrix, timerBar, timerGesture;
+unsigned long timerRainbow, timerFillHex, timerFillMatrix, timerBar, timerGesture, timePlay;
 int modeMatrix = 1;
 int modeBar = 1;
 int countBar, countMatrix;
-boolean flagBar = false;
+boolean flagBar, flagPlay;
 
 const int buzzChan = 0;
 
-
-
-
-/*
-void interruptRoutine() {
-    detachInterrupt(PIN_GESTURE_INT_MATRIX);
-    //handleGesture();
-    isr_flag = 1;
-    attachInterrupt(PIN_GESTURE_INT_MATRIX, interruptRoutine, FALLING);
-}
-*/
-//void IRAM_ATTR interruptRoutine() {
-//    isr_flag = 1;
-//}
 
 void setup() {
 	Serial.begin(115200);
@@ -93,7 +80,7 @@ void setup() {
 
 	FastLED.addLeds<UCS1903, PIN_LED_MATRIX, RGB>(ledsRGB, getRGBWsize(NUM_LEDS));
   FastLED.addLeds<WS2811, PIN_LED_RING>(ledRing, 10);
-	FastLED.setBrightness(brightness);
+	FastLED.setBrightness(BRIGHTNESS);
 	FastLED.show();
   
   Wire1.begin(PIN_I2C_MS_SDA, PIN_I2C_MS_SCL);
@@ -115,7 +102,7 @@ void setup() {
   //set the interrupt threshold to fire when proximity reading goes above 175
   //apds.setProximityInterruptThreshold(0, 175);
   //enable the proximity interrupt
-  //apds.enableProximityInterrupt();
+  apds.enableProximityInterrupt();
   apds.setGestureGain(APDS9960_GGAIN_8);
 
   ina219.setADCMode(SAMPLE_MODE_128);
@@ -149,7 +136,22 @@ void setup() {
     if ((b % 3) == 2)  bar.setBar(b, LED_GREEN);
   }
   bar.writeDisplay();
-  delay(2000);
+  delay(500);
+}
+
+void tickTone() {
+  if (timePlay < millis() and flagPlay){
+    ledcWriteTone(buzzChan, 0);
+    flagPlay = false;
+  }
+}
+
+void playTone(int frequenz, int playtime) {
+  if (!flagPlay) {
+    timePlay = millis() + playtime;
+    ledcWriteTone(buzzChan, frequenz);
+    flagPlay = true;
+  }
 }
 
 void handleGesture() {
@@ -225,6 +227,41 @@ void barLoop() {
   }
 }
 
+void randFill() {
+  int led = random(0, NUM_LEDS);
+  int color = random(1, 9);
+  switch (color) {
+    case 1:
+      leds[led] = CRGB::Red;
+      break;
+    case 2:
+      leds[led] = CRGB::Green;
+      break;
+    case 3:
+      leds[led] = CRGB::Blue;
+      break;
+    case 4:
+      leds[led] = CRGBW(0, 0, 0, 255);
+      break;
+    case 5:
+      leds[led] = CRGB::White;
+      break;
+    case 6:
+      leds[led] = CRGB::Aqua;
+      break;
+    case 7:
+      leds[led] = CRGB::HotPink;
+      break;
+    case 8:
+      leds[led] = CRGB::Yellow;
+      break;
+    default:
+      leds[led] = CRGB::Black;
+      break;
+  }
+  FastLED.show();
+}
+
 void colorFill() {
   if (countMatrix < NUM_LEDS) {
     switch (modeMatrix) {
@@ -253,16 +290,22 @@ void colorFill() {
   }
 }
 
-void fillWhite(){
-	for(int i = 0; i < NUM_LEDS; i++){
-		leds[i] = CRGBW(0, 0, 0, 255);
-		FastLED.show();
-		delay(20);
-	}
-	delay(200);
+void motorInfo() {
+  float current_mA = ina219.getCurrent_mA() + 0.2;
+  float busVoltage_V = ina219.getBusVoltage_V();
+  if (current_mA <= -0.5 or current_mA >= 0.5) {
+    if (busVoltage_V < 1.0 and digitalRead(PIN_MOT_EN) == LOW) {
+      current_mA = current_mA * 100;
+      int motorvalue = map(abs((int) current_mA),0,4000,300,6000);
+      playTone(motorvalue,100);
+      //Serial.print("Motor: "); Serial.println(motorvalue);
+    }
+  }
 }
 
+
 void loop() {
+  tickTone();
   if (timerFillHex < millis()) {
     timerFillHex = millis() + 500;
     writehex();
@@ -276,12 +319,12 @@ void loop() {
     barLoop();
   }
   if (timerFillMatrix < millis()) {
-    timerFillMatrix = millis() + 50;
-    colorFill();
+    timerFillMatrix = millis() + 20;
+    randFill();
   }
   if (timerGesture < millis()) {
-    timerGesture = millis() + 10;
-    handleGesture();
+    timerGesture = millis() + 100;
+    motorInfo();
   }
   
   buttonStateL = digitalRead(PIN_TOUCH_L);
@@ -291,32 +334,4 @@ void loop() {
     digitalWrite(PIN_MOT_EN, LOW);
   }
 
-  /*
-  float shuntVoltage_mV = 0.0;
-  float loadVoltage_V = 0.0;
-  float busVoltage_V = 0.0;
-  float current_mA = 0.0;
-  float power_mW = 0.0; 
-  bool ina219_overflow = false;
-  
-  shuntVoltage_mV = ina219.getShuntVoltage_mV();
-  busVoltage_V = ina219.getBusVoltage_V();
-  current_mA = ina219.getCurrent_mA();
-  power_mW = ina219.getBusPower();
-  loadVoltage_V  = busVoltage_V + (shuntVoltage_mV/1000);
-  ina219_overflow = ina219.getOverflow();
-  
-  Serial.print("Shunt Voltage [mV]: "); Serial.println(shuntVoltage_mV);
-  Serial.print("Bus Voltage [V]: "); Serial.println(busVoltage_V);
-  Serial.print("Load Voltage [V]: "); Serial.println(loadVoltage_V);
-  Serial.print("Current[mA]: "); Serial.println(current_mA);
-  Serial.print("Bus Power [mW]: "); Serial.println(power_mW);
-  if(!ina219_overflow){
-    Serial.println("Values OK - no overflow");
-  }
-  else{
-    Serial.println("Overflow! Choose higher PGAIN");
-  }
-  Serial.println();
-  */
 }
