@@ -5,7 +5,7 @@
 #define END_PACKAGE 4
 volatile byte requestType = ALIVE_PACKAGE;
 volatile int countText = 0;
-
+extern unsigned long getSovleTime(int seed);
 
 void receiveEvent(int howMany) {
   byte c = Wire.read(); // receive Package identyfyer
@@ -19,7 +19,7 @@ void receiveEvent(int howMany) {
       seed = (c << 8) | lowbyte;
       lowbyte = c;
     }
-    unsigned long sovleTime = 10;// Zeit zum lösen des Rätsels in Sekunden
+    unsigned long sovleTime = getSovleTime(seed);// Zeit zum lösen des Rätsels in Sekunden
     Wire.slaveWrite((uint8_t *)&sovleTime, 4);
     statusChar = STATUS_OK;
     endByte = END_RUNNING;
