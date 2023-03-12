@@ -1,5 +1,24 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include "introducion.h"// Die Anleitung für deine Seite
+
+// Stati, die du seten kannst um dem Master Dinge mitzuteilen.
+#define STATUS_NO_INIT 254  // Ich bin noch nicht bereit, bitte initialisiere mich
+#define STATUS_OK 0         // Alles okay, alles läuft wie geplant
+#define STATUS_WIN 25      // Meine Seite wurde Erfolgreich geschafft
+//Alles höhere ist der Fehler counter
+volatile byte statusChar = STATUS_NO_INIT; // Am anfang nicht bereit
+
+// Das end Byte wird gesetzt, sobald sich der Spielstatus verändert, 
+#define END_IDLE 0
+#define END_RUNNING 1
+#define END_LOST 2
+#define END_WIN 3
+volatile byte endByte = END_IDLE;// 0 = Nichts, 1 = läuft, 2 = Verloren, 3 = Gewonnen
+
+volatile int seed = 0;    // Der Seed wird bei der Initialisierung übertragen und soll verschiedene Wege eröffnen
+
+#include "MasterCommunication.h"
 
 #include "FastLED.h"
 #include "FastLED_RGBW.h"
@@ -150,6 +169,7 @@ void demoCode() {
 void setup() {
 	Serial.begin(115200);
   Serial.println();
+  initMasterConnection();
   initBuzzer();
 	initMotor();
   initFastLED();
@@ -160,10 +180,11 @@ void setup() {
   playInitMelody();
   Wire1.begin(PIN_I2C_MS_SDA, PIN_I2C_MS_SCL);
   bar.begin(0x71,&Wire1);
+  bar.setBrightness(8);//Medium
   alpha4.begin(0x70,&Wire1);
   initIna();
   initAPDS();
-
+  
   demoCode();
 }
 
@@ -331,8 +352,7 @@ void motorInfo() {
   }
 }
 
-
-void loop() {
+void idle() {
   tickTone();
   if (timerFillHex < millis()) {
     timerFillHex = millis() + 500;
@@ -361,5 +381,30 @@ void loop() {
   } else {
     digitalWrite(PIN_MOT_EN, LOW);
   }
+}
 
+void fillBar(u_int8_t color, u_int8_t blinkRate) {
+  for (uint8_t c = 0; c<=23;c++) {
+    bar.setBar(c, color);
+  }
+  bar.blinkRate(blinkRate);
+  bar.writeDisplay();
+}
+
+
+void loop() {
+  if (endByte == END_RUNNING) {// Spiel läuft
+    if (statusChar >= 25) {
+      fillBar(LED_GREEN, HT16K33_BLINK_HALFHZ);
+      //Diese Seite ist schon gelöst
+    } else {
+
+    }
+  } else if (endByte == END_LOST) {// Verloren
+    fillBar(LED_RED, HT16K33_BLINK_2HZ);
+  } else if (endByte == END_WIN) {// Gewonnen
+    fillBar(LED_GREEN, HT16K33_BLINK_HALFHZ);
+  } else if (endByte == END_IDLE) {// Nichts
+    idle();
+  }
 }
