@@ -12,7 +12,7 @@
 #include "Adafruit_APDS9960.h"
 Adafruit_APDS9960 apds;
 
-#include "define.h";
+#include "define.h"
 
 Adafruit_24bargraph bar = Adafruit_24bargraph();
 Adafruit_AlphaNum4 alpha4 = Adafruit_AlphaNum4();
@@ -40,76 +40,84 @@ boolean flagBar, flagPlay;
 
 const int buzzChan = 0;
 
-
-void setup() {
-	Serial.begin(115200);
-	
-  delay(5000);
-  Serial.println();
-
-	pinMode(PIN_BUZZER, OUTPUT);
-	pinMode(PIN_MOT_EN, OUTPUT);
-	pinMode(PIN_MOT_DIR, OUTPUT);
-	pinMode(PIN_LED_MATRIX, OUTPUT);
-	pinMode(PIN_LED_RING, OUTPUT);
-	
-	digitalWrite(PIN_BUZZER, LOW);
-	digitalWrite(PIN_MOT_EN, LOW);
-	digitalWrite(PIN_MOT_DIR, LOW);
-	digitalWrite(PIN_LED_MATRIX, LOW);
-	digitalWrite(PIN_LED_RING, LOW);
-	
-	pinMode(PIN_TOUCH_L, INPUT);
-	pinMode(PIN_TOUCH_R, INPUT);
-	pinMode(PIN_JOYSTICK_SW, INPUT);
-	pinMode(PIN_PUSH_1, INPUT);
-	pinMode(PIN_PUSH_2, INPUT);
-	pinMode(PIN_PUSH_3, INPUT);
-	pinMode(PIN_PUSH_4, INPUT);
-	pinMode(PIN_GESTURE_INT_MATRIX, INPUT_PULLUP);
-
+void initBuzzer() {
+  pinMode(PIN_BUZZER, OUTPUT);
+  digitalWrite(PIN_BUZZER, LOW);
   ledcSetup(buzzChan, 2000, 12);
   ledcAttachPin(PIN_BUZZER, buzzChan);
   //attachInterrupt(PIN_GESTURE_INT_MATRIX, interruptRoutine, FALLING);
+}
 
+void playInitMelody() {
   ledcWriteTone(buzzChan, 600);
   delay(500);
   ledcWriteTone(buzzChan, 800);
   delay(500);
   ledcWriteTone(buzzChan, 0);
+}
 
-	FastLED.addLeds<UCS1903, PIN_LED_MATRIX, RGB>(ledsRGB, getRGBWsize(NUM_LEDS));
+void initMotor() {
+  pinMode(PIN_MOT_EN, OUTPUT);
+	pinMode(PIN_MOT_DIR, OUTPUT);
+  digitalWrite(PIN_MOT_EN, LOW);
+	digitalWrite(PIN_MOT_DIR, LOW);
+}
+
+void initFastLED() {
+  pinMode(PIN_LED_MATRIX, OUTPUT);
+	pinMode(PIN_LED_RING, OUTPUT);
+  digitalWrite(PIN_LED_MATRIX, LOW);
+	digitalWrite(PIN_LED_RING, LOW);
+  FastLED.addLeds<UCS1903, PIN_LED_MATRIX, RGB>(ledsRGB, getRGBWsize(NUM_LEDS));
   FastLED.addLeds<WS2811, PIN_LED_RING>(ledRing, 10);
 	FastLED.setBrightness(BRIGHTNESS);
 	FastLED.show();
-  
-  Wire1.begin(PIN_I2C_MS_SDA, PIN_I2C_MS_SCL);
-  bar.begin(0x71,&Wire1);
-  alpha4.begin(0x70,&Wire1);
-  
+}
+
+void initTochButtons() {
+  pinMode(PIN_TOUCH_L, INPUT);
+	pinMode(PIN_TOUCH_R, INPUT);
+}
+
+void initJoyStick() {
+  pinMode(PIN_JOYSTICK_SW, INPUT);
+  analogReadResolution(10);// 10 bit Auflösung
+}
+
+void initButtons() {
+  pinMode(PIN_PUSH_1, INPUT);
+	pinMode(PIN_PUSH_2, INPUT);
+	pinMode(PIN_PUSH_3, INPUT);
+	pinMode(PIN_PUSH_4, INPUT);
+}
+
+void initIna() {
   if(!ina219.init()) {
     Serial.println("INA219 not connected!");
   }
+  ina219.setADCMode(SAMPLE_MODE_128);
+  ina219.setMeasureMode(CONTINUOUS);
+  ina219.setPGain(PG_80);
+  ina219.setBusRange(BRNG_16);
+}
 
+void initAPDS() {
   if(!apds.begin(10,APDS9960_AGAIN_4X,APDS9960_ADDRESS,&Wire1)) {
-    Serial.println("failed to initialize device! Please check your wiring.");
+    Serial.println("failed to initialize ADPS! Please check your wiring.");
+  }  else {
+    Serial.println("APDS initialized!");
   }
-  else Serial.println("Device initialized!");
-
   apds.enableProximity(true);
   apds.enableGesture(true);
-
   //set the interrupt threshold to fire when proximity reading goes above 175
   //apds.setProximityInterruptThreshold(0, 175);
   //enable the proximity interrupt
   apds.enableProximityInterrupt();
   apds.setGestureGain(APDS9960_GGAIN_8);
+}
 
-  ina219.setADCMode(SAMPLE_MODE_128);
-  ina219.setMeasureMode(CONTINUOUS);
-  ina219.setPGain(PG_80);
-  ina219.setBusRange(BRNG_16);
-
+void demoCode() {
+  
   alpha4.writeDigitRaw(3, 0x0);
   alpha4.writeDigitRaw(0, 0xFFFF);
   alpha4.writeDisplay();
@@ -137,6 +145,26 @@ void setup() {
   }
   bar.writeDisplay();
   delay(500);
+}
+
+void setup() {
+	Serial.begin(115200);
+  Serial.println();
+  initBuzzer();
+	initMotor();
+  initFastLED();
+	initTochButtons();
+  initJoyStick();
+	initButtons();
+	//pinMode(PIN_GESTURE_INT_MATRIX, INPUT_PULLUP);
+  playInitMelody();
+  Wire1.begin(PIN_I2C_MS_SDA, PIN_I2C_MS_SCL);
+  bar.begin(0x71,&Wire1);
+  alpha4.begin(0x70,&Wire1);
+  initIna();
+  initAPDS();
+
+  demoCode();
 }
 
 void tickTone() {

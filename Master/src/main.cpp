@@ -124,7 +124,7 @@ void loop() {
   tm.display("IDLE")->scrollLeft(500);
   while (gameRunning) {
     //tell the wdt we are still alive
-    rtc_wdt_feed();
+    rtc_wdt_feed();// Eigentlich unnötig, da der Watchdog ja gefüttert wird, wenn der irgendeine aktion macht.
     tm.clearScreen();
     ts = (int)(startPoint + timeGame * 1000 - millis())/1000;
     sekunden = (ts)%60;
@@ -159,5 +159,5 @@ void loop() {
     }
     delay(1000);
   }
-  delay(10000);
+  delay(1000);
 }
