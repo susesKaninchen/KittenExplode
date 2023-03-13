@@ -8,10 +8,21 @@
 #define PIN_TOUCH_L 25
 #define PIN_TOUCH_R 27
 #define PIN_JOYSTICK_SW 19
+
+struct Button {
+    const uint8_t PIN;
+    bool pressed;
+    byte temp;
+};
+
 #define PIN_PUSH_1 15
+Button button1 = {PIN_PUSH_1, false, 0};
 #define PIN_PUSH_2 32
+Button button2 = {PIN_PUSH_2, false, 0};
 #define PIN_PUSH_3 16
+Button button3 = {PIN_PUSH_3, false, 0};
 #define PIN_PUSH_4 17
+Button button4 = {PIN_PUSH_4, false, 0};
 #define PIN_GESTURE_INT_MATRIX 18
 
 //Digital Output

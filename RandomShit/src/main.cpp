@@ -46,7 +46,6 @@ CRGB *ledsRGB = (CRGB *) &leds[0];
 CRGB ledRing[10];
 
 int isr_flag = 0;
-char displaybuffer[4] = {' ', ' ', ' ', ' '};
 
 int buttonStateL = 0;
 int buttonStateR = 0;
@@ -60,7 +59,20 @@ boolean flagBar, flagPlay;
 const int buzzChan = 0;
 
 //Marco neue Inits Idee
-byte gmode4Digit = 0;// 0 = Deaktivirt, 1 = 
+byte gmode4Digit = 0;// 0 = Deaktivirt, 1 = only Numbrs, 2 = Word, 3 = PW
+byte gmodeMatrix = 0;// 0 = Deaktivirt, 1 = Snake, 2 = PingPong, 3 = Maze, ... (Tetris, Bomberman, Pacman)
+byte gmodeEncoder = 0;// 0 = Deaktivirt, 1 = FindTone, 2 = 1D-Spiel, 3 = Color Riddle
+
+char pwSeg[4] = {' ', ' ', ' ', ' '};// Lösungswort
+char segDisplay[4] = {'X', 'X', 'X', 'X'};// Lösungswort
+int segSpeed = 500;// time in ms to show next digit
+unsigned long segtime = 0;
+byte buttonstate = 0;//Bit wise; State,Pause,state2, pause2, ....
+byte segWinState = 0;// 0 = läuft, 1 = gewonnen
+char digits[] = "0123456789"; // Das Array mit allen Ziffern
+char uppercase[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // Das Array mit allen Großbuchstaben
+char uppercaseAndSpecial[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+-={}[]\\|;:'\"<>,.?/"; // Das Array mit allen Großbuchstaben und Sonderzeichen
+char *charArrays[] = {digits, uppercase, uppercaseAndSpecial}; // Das Array, das die drei separate Arrays enthält
 
 
 void initBuzzer() {
@@ -99,11 +111,20 @@ void initJoyStick() {
   analogReadResolution(10);// 10 bit Auflösung
 }
 
+void ARDUINO_ISR_ATTR isr(void* arg) {
+    Button* s = static_cast<Button*>(arg);
+    s->pressed = true;
+}
+
 void initButtons() {
   pinMode(PIN_PUSH_1, INPUT);
+  attachInterruptArg(PIN_PUSH_1, isr, &button1, FALLING);
 	pinMode(PIN_PUSH_2, INPUT);
+  attachInterruptArg(PIN_PUSH_2, isr, &button2, FALLING);
 	pinMode(PIN_PUSH_3, INPUT);
+  attachInterruptArg(PIN_PUSH_3, isr, &button3, FALLING);
 	pinMode(PIN_PUSH_4, INPUT);
+  attachInterruptArg(PIN_PUSH_4, isr, &button4, FALLING);
 }
 
 void initIna() {
@@ -162,13 +183,66 @@ void setup() {
   //demoCode();
 }
 
-unsigned long getSovleTime(int seed) {// Bitte kurz halten Zeitlich gesehen <1 ms
-  unsigned long sovleTime = 10;
 
-
-  return sovleTime;
+void writeSegment() {
+  for (u_int8_t n = 0 ; n<4;n++) {
+    alpha4.writeDigitAscii(n, segDisplay[n]);
+  }
 }
 
+unsigned long initSegmentGame(char no1, char no2, char no3, char no4, int speed) {
+  unsigned long sovleTimeSeg = 40;
+  pwSeg[0] = no1;
+  pwSeg[1] = no2;
+  pwSeg[2] = no3;
+  pwSeg[3] = no4;
+  segSpeed = speed;
+  sovleTimeSeg = sovleTimeSeg * gmode4Digit * (1000/speed);
+  segtime = millis();
+  return sovleTimeSeg;
+}
+
+char getChar() {
+  if (gmode4Digit == 0) {
+    return ' ';
+  }
+  return charArrays[gmode4Digit-1][random(0, strlen(charArrays[gmode4Digit-1]))];
+}
+
+void handle_button(Button but,byte index, bool rotate) {
+    if (but.pressed){// Wenn der Knopf seit letztem mal gedrückt wurde
+    but.pressed =  false;// setze ihn auf nicht gedrückt
+    if (but.temp != 0) {// Wenn temp (1 =  aus, 0 = rattert durch) angehalten ist, dann weiter laufen lassen
+      but.temp = 0;
+    }else {
+      but.temp = 1;// wenn nicht anhalten
+    }
+  }
+  if (but.temp == 0 && rotate) {// wenn 0 dann neuen buchstaben rein
+    // Rotier flag wird nach allen zurück gesetzt
+    segDisplay[index] = getChar();
+  }
+}
+
+void handleSegGame() {
+  bool rotate = false;
+  if (segtime + segSpeed < millis()) {
+    segtime = millis();// Setze Rotierertimer zurück
+    rotate = true;
+  }
+  handle_button(button1, 0, rotate);
+  handle_button(button2, 1, rotate);
+  handle_button(button3, 2, rotate);
+  handle_button(button4, 3, rotate);
+  if (rotate) {
+    writeSegment();
+  }
+  if (segDisplay[0] == pwSeg[0] && segDisplay[1] == pwSeg[1] && segDisplay[2] == pwSeg[2] && segDisplay[3] == pwSeg[3]) {
+    segWinState = 1;
+  } else {
+    segWinState = 0;
+  }
+}
 
 void fillBar(u_int8_t color, u_int8_t blinkRate) {
   for (uint8_t c = 0; c<=23;c++) {
@@ -179,31 +253,28 @@ void fillBar(u_int8_t color, u_int8_t blinkRate) {
 }
 
 void segWriteStatus() {
-  char letters[4];
   if (endByte == END_RUNNING && statusChar < 25) {
-    letters[0] = 'R';
-    letters[1] = 'U';
-    letters[2] = 'N';
-    letters[3] = ' ';
+    segDisplay[0] = 'R';
+    segDisplay[1] = 'U';
+    segDisplay[2] = 'N';
+    segDisplay[3] = ' ';
   } else if (endByte == END_LOST) {// Verloren
-    letters[0] = 'L';
-    letters[1] = 'O';
-    letters[2] = 'S';
-    letters[3] = 'T';
+    segDisplay[0] = 'L';
+    segDisplay[1] = 'O';
+    segDisplay[2] = 'S';
+    segDisplay[3] = 'T';
   } else if (endByte == END_WIN || statusChar >=25) {// Gewonnen
-    letters[0] = 'W';
-    letters[1] = 'I';
-    letters[2] = 'N';
-    letters[3] = ' ';
+    segDisplay[0] = 'W';
+    segDisplay[1] = 'I';
+    segDisplay[2] = 'N';
+    segDisplay[3] = ' ';
   } else if (endByte == END_IDLE) {// Nichts
-    letters[0] = 'I';
-    letters[1] = 'D';
-    letters[2] = 'L';
-    letters[3] = 'E';
+    segDisplay[0] = 'I';
+    segDisplay[1] = 'D';
+    segDisplay[2] = 'L';
+    segDisplay[3] = 'E';
   }
-  for (u_int8_t n = 0 ; n<4;n++) {
-    alpha4.writeDigitAscii(n, letters[n]);
-  }
+  writeSegment();
 }
 
 
@@ -215,7 +286,10 @@ void loop() {
       //Diese Seite ist schon gelöst
     } else {
       //Do the Game
-
+      handleSegGame();
+      if ((!gmode4Digit || segWinState) && (!gmodeMatrix) && (!gmodeEncoder)) {// Win
+        statusChar += 25;
+      }
     }
   } else if (endByte == END_LOST) {// Verloren
     fillBar(LED_RED, HT16K33_BLINK_2HZ);
@@ -227,4 +301,20 @@ void loop() {
     segWriteStatus();
     //idle();
   }
+}
+
+
+unsigned long getSovleTime(int seed) {// Bitte kurz halten Zeitlich gesehen <1 ms
+  unsigned long sovleTime = 10;// 10 sekunden zum klar kommen
+  if (seed%2 == 0){
+     gmode4Digit = 1;// nur Zahlen
+     sovleTime += initSegmentGame('0', '0', '0', '0', 500);// 0000 muss gefunden werden und die buchstaben gehen halbsekündlich durch
+  } else if (seed%2 == 1) {
+    gmode4Digit = 2;// nur Buchstaben
+    sovleTime += initSegmentGame('T', 'E', 'S', 'T', 500);// TEST muss gefunden werden und die buchstaben gehen halbsekündlich durch
+  } else {
+    gmode4Digit = 3;// Buchstaben und SonderZeichen
+    sovleTime += initSegmentGame('[', 'X', 'X', ']', 500);// TEST muss gefunden werden und die buchstaben gehen halbsekündlich durch
+  }
+  return sovleTime;
 }
