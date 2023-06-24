@@ -12,12 +12,26 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <LiquidCrystal_I2C.h>
 
 #include <TM1637.h>
 // Instantiation and pins configurations
 // Pin 19 - > DIO
 // Pin 18 - > CLK
 TM1637 tm(18, 19);
+LiquidCrystal_I2C lcd(0x27, 20, 4); 
+int seedGobal = 0;
+unsigned long timeGame = -1;
+bool gameRunning = false;
+byte gameStati = 0;
+unsigned long startPoint = millis();
+unsigned long lastWrite = millis();
+int minuten = 0;
+int sekunden = 0;
+int millisekunden = 0;
+unsigned long ts = 0;
+uint8_t bombb[8] = {0x1, 0x2, 0x4, 0xe, 0x11, 0x11, 0x11, 0xe};
+
 
 #include <Adafruit_NeoPixel.h>
 #define LED_PIN        26
@@ -57,16 +71,6 @@ String processor(const String& var)
   return String("%" + var + "%");
 }
 
-int seedGobal = 0;
-unsigned long timeGame = -1;
-bool gameRunning = false;
-byte gameStati = 0;
-unsigned long startPoint = millis();
-unsigned long lastWrite = millis();
-int minUten = 0;
-int sekunden = 0;
-unsigned long ts = 0;
-
 void setPixel(byte error) {
   for (int g = 0 ; g<3; g++) {
     if (error >= g+1){
@@ -81,7 +85,29 @@ void setPixel(byte error) {
 void setup() {
   Serial.begin(115200);
   while (!Serial);
-  
+  lcd.init();
+  lcd.backlight();
+  lcd.createChar(0, bombb);
+  lcd.home();
+  lcd.setCursor(0,0);
+  lcd.print("Starte Spiel");
+  lcd.setCursor(0,1);
+  lcd.print("ueber 192.1.1.1");
+  lcd.setCursor(0,3);
+  lcd.print("Erfolg! Have fun:)");
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(3,2);
+  lcd.write(0);
+  for (int g = 0 ; g<20; g++) {
+    lcd.setCursor(4,1);
+    lcd.print("------------*");
+  }
+  lcd.setCursor(17,0);
+  lcd.print(",");
+  lcd.setCursor(15,2);
+  lcd.print("'");
+
   Wire.begin(); // join i2c bus (address optional for writer)
 
   IPAddress apIP(192,1,1,1);
@@ -100,7 +126,7 @@ void setup() {
       gameStati = 0;
       startPoint = millis();
       lastWrite = millis();
-      minUten = 0;
+      minuten = 0;
       sekunden = 0;
       ts = 0;
     }
@@ -125,11 +151,39 @@ void loop() {
   while (gameRunning) {
     //tell the wdt we are still alive
     rtc_wdt_feed();// Eigentlich unnötig, da der Watchdog ja gefüttert wird, wenn der irgendeine aktion macht.
-    tm.clearScreen();
-    ts = (int)(startPoint + timeGame * 1000 - millis())/1000;
-    sekunden = (ts)%60;
-    minUten = ts/60;
-    tm.display((float) minUten + (sekunden/100));
+    //tm.clearScreen();
+    //ts = (int)(startPoint + timeGame * 1000 - millis())/1000;
+    //sekunden = (ts)%60;
+    //minUten = ts/60;
+    //tm.display((float) minUten + (sekunden/100));
+    minuten = ((ts- millis()) / (60*1000));
+    sekunden = ((ts - millis() - minuten * 60 * 1000) / 1000);
+    millisekunden = ((ts - millis() - minuten * 60 * 1000 - sekunden * 1000));
+    lcd.setCursor(0,0);
+    lcd.print("Zeit: ");
+    lcd.setCursor(3,1);
+    if (minuten < 10) {
+      lcd.print("0");
+    }
+    lcd.print(minuten);
+    lcd.print(":");
+
+    if (sekunden < 10) {
+      lcd.print("0");
+    }
+    lcd.print(sekunden);
+    lcd.print(":");
+
+    if (millisekunden < 10) {
+      lcd.print("00");
+    } else if (millisekunden < 100) {
+      lcd.print("0");
+    }
+    lcd.print(millisekunden);
+    lcd.setCursor(0,1);
+
+
+
     gameStati = getStatusSlaves();
     if (millis() > lastWrite + 2000) {
       setPixel(gameStati%25);
@@ -160,4 +214,5 @@ void loop() {
     delay(1000);
   }
   delay(1000);
+
 }

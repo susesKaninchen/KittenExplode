@@ -124,7 +124,7 @@ long initSlaves(int seed) {
     for (uint8_t slaveCount = 0; slaveCount<8;slaveCount++) {
       TCA9548A(slaveCount);
       byte tm = getSlaveStatus(8);
-      if (tm != 255) {// Wenn kein Fehler
+      if (tm != 263) {// Wenn kein Fehler
         fin +tm;
       }else {
         Serial.print("(Init)Port: ");
